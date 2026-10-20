@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Xcode user state and build output
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+DerivedData/
+build/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Archives and exports
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# The global gitignore excludes project.pbxproj; this project needs it to open in Xcode.
+!project.pbxproj
