@@ -30,8 +30,8 @@ final class MusicLibrary {
             return
         }
         status = .loading
-        let names = await Task.detached(priority: .userInitiated) { Self.readNames() }.value
-        puzzles = LibraryCleaner.puzzles(from: names)
+        let songs = await Task.detached(priority: .userInitiated) { Self.readSongs() }.value
+        puzzles = LibraryCleaner.puzzles(from: songs)
         status = .loaded
     }
 
@@ -43,12 +43,12 @@ final class MusicLibrary {
         }
     }
 
-    private nonisolated static func readNames() -> LibraryNames {
-        let items = MPMediaQuery.songs().items ?? []
-        return LibraryNames(
-            songs: items.compactMap(\.title),
-            artists: items.compactMap { $0.albumArtist ?? $0.artist }
-        )
+    private nonisolated static func readSongs() -> [LibrarySong] {
+        (MPMediaQuery.songs().items ?? []).compactMap { item in
+            item.title.map {
+                LibrarySong(title: $0, artist: item.albumArtist ?? item.artist, album: item.albumTitle, genre: item.genre)
+            }
+        }
     }
 
     private static func status(for authorization: MPMediaLibraryAuthorizationStatus) -> Status {

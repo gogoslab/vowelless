@@ -24,6 +24,13 @@ struct LetterTile: View {
     }
 }
 
+extension LetterTile {
+    /// The `i`th tile of the "VWLLSS" title.
+    static func title(_ i: Int) -> LetterTile {
+        LetterTile(letter: Theme.title[i], size: Theme.titleTileSize, face: Theme.palette[i % Theme.palette.count], ink: .white, tilt: Theme.tilt(i))
+    }
+}
+
 private struct StartsWordKey: LayoutValueKey {
     static let defaultValue = false
 }
@@ -123,6 +130,8 @@ struct ClueBoard: View {
     let answer: String
     let revealed: Bool
     var difficulty: Difficulty = .easy
+    /// Vowels the player chose to reveal before the answer.
+    var revealedVowels: Set<Character> = []
     var accent: Color = Category.song.color
     var maxWidth: CGFloat = 320
     var maxTileSize: CGFloat = 48
@@ -162,7 +171,7 @@ struct ClueBoard: View {
                 return Placed(tile: tile, startsWord: tile.wordIndex != previousWord)
             }
         }
-        return Disemvoweler.clueGroups(for: answer, difficulty: difficulty).flatMap { group in
+        return Disemvoweler.clueGroups(for: answer, difficulty: difficulty, revealedVowels: revealedVowels).flatMap { group in
             group.enumerated().map { Placed(tile: $1, startsWord: $0 == 0) }
         }
     }

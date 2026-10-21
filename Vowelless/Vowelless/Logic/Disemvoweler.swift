@@ -38,28 +38,50 @@ enum Disemvoweler {
         return tiles
     }
 
-    /// The consonants of the answer, grouped into the "words" the player sees.
-    static func clueGroups(for answer: String, difficulty: Difficulty) -> [[ClueTile]] {
-        let consonants = tiles(of: answer).filter { !$0.isVowel }
-        guard !consonants.isEmpty else { return [] }
+    /// The tiles the player sees, grouped into "words": every consonant, plus any vowels in `revealedVowels`.
+    static func clueGroups(for answer: String, difficulty: Difficulty, revealedVowels: Set<Character> = []) -> [[ClueTile]] {
+        let shown = tiles(of: answer).filter { !$0.isVowel || revealedVowels.contains($0.letter) }
+        guard !shown.isEmpty else { return [] }
 
         switch difficulty {
         case .easy:
-            return Dictionary(grouping: consonants, by: \.wordIndex)
+            return Dictionary(grouping: shown, by: \.wordIndex)
                 .sorted { $0.key < $1.key }
                 .map(\.value)
         case .medium:
-            return [consonants]
+            return [shown]
         case .hard:
-            let real = clueGroups(for: answer, difficulty: .easy)
-            var rng = SeededGenerator(seed: stableHash(answer))
-            // Retry a few times so the random split doesn't happen to match the real one.
-            for _ in 0..<5 {
-                let groups = randomSplit(consonants, using: &rng)
-                if groups != real || consonants.count < 3 { return groups }
+            // Split the consonants first so buying a vowel never reshuffles the made-up spaces.
+            var groups = randomConsonantGroups(for: answer)
+            for vowel in shown where vowel.isVowel {
+                insert(vowel, into: &groups)
             }
-            return randomSplit(consonants, using: &rng)
+            return groups
         }
+    }
+
+    /// Puts a vowel into the group of the consonant just before it (or the first group if none).
+    private static func insert(_ vowel: ClueTile, into groups: inout [[ClueTile]]) {
+        guard !groups.isEmpty else {
+            groups = [[vowel]]
+            return
+        }
+        let target = groups.lastIndex { group in group.contains { $0.id < vowel.id } } ?? 0
+        let position = groups[target].firstIndex { $0.id > vowel.id } ?? groups[target].endIndex
+        groups[target].insert(vowel, at: position)
+    }
+
+    private static func randomConsonantGroups(for answer: String) -> [[ClueTile]] {
+        let consonants = tiles(of: answer).filter { !$0.isVowel }
+        guard !consonants.isEmpty else { return [] }
+        let real = clueGroups(for: answer, difficulty: .easy)
+        var rng = SeededGenerator(seed: stableHash(answer))
+        // Retry a few times so the random split doesn't happen to match the real one.
+        for _ in 0..<5 {
+            let groups = randomSplit(consonants, using: &rng)
+            if groups != real || consonants.count < 3 { return groups }
+        }
+        return randomSplit(consonants, using: &rng)
     }
 
     /// "Bohemian Rhapsody" -> "BHMN RHPSD" (easy), "BHMNRHPSD" (medium), "BH MNR HPSD" (hard).

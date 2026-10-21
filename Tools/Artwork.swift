@@ -31,12 +31,13 @@ struct Tile: View {
     let face: Color
     let ink: Color
     let side: CGFloat
+    var fontScale: CGFloat = 0.6
 
     var body: some View {
         let depth = side * 0.13
         let shape = RoundedRectangle(cornerRadius: side * 0.24, style: .continuous)
         Text(letter)
-            .font(.system(size: side * 0.6, weight: .black, design: .rounded))
+            .font(.system(size: side * fontScale, weight: .black, design: .rounded))
             .foregroundStyle(ink)
             .frame(width: side, height: side)
             .background(shape.fill(LinearGradient(colors: [face.mix(with: .white, by: 0.3), face], startPoint: .top, endPoint: .bottom)))
@@ -72,6 +73,7 @@ struct Icon: View {
 }
 
 /// The "VWLLSS" title from the home screen, on a transparent background.
+/// Sized like LetterTile at Theme.titleTileSize so the launch screen hands off seamlessly to SplashView.
 struct LaunchLogo: View {
     static let letters = Array("VWLLSS")
     static let colors = [Palette.pink, Palette.yellow, Palette.red, Palette.teal, Palette.green, Palette.lime]
@@ -80,7 +82,7 @@ struct LaunchLogo: View {
     var body: some View {
         HStack(spacing: 6) {
             ForEach(0..<Self.letters.count, id: \.self) { i in
-                Tile(letter: String(Self.letters[i]), face: Self.colors[i], ink: .white, side: 48)
+                Tile(letter: String(Self.letters[i]), face: Self.colors[i], ink: .white, side: 50, fontScale: 0.56)
                     .rotationEffect(.degrees(Self.tilts[i]))
             }
         }

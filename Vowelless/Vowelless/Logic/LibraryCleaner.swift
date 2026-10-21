@@ -1,9 +1,11 @@
 import Foundation
 
-/// Raw names read from the Music library.
-struct LibraryNames: Sendable {
-    var songs: [String] = []
-    var artists: [String] = []
+/// One song as read from the Music library, before cleaning.
+struct LibrarySong: Sendable {
+    var title: String
+    var artist: String?
+    var album: String?
+    var genre: String?
 }
 
 /// Turns messy library metadata into puzzle answers.
@@ -34,20 +36,43 @@ enum LibraryCleaner {
         return acceptable(artist)
     }
 
-    static func puzzles(from names: LibraryNames) -> [Puzzle] {
+    static func puzzles(from songs: [LibrarySong]) -> [Puzzle] {
         var seen: Set<String> = []
         var puzzles: [Puzzle] = []
-        func add(_ answer: String, _ category: Category) {
-            let key = "\(category.rawValue):\(AnswerMatcher.normalize(answer))"
+        func add(_ puzzle: Puzzle) {
+            let key = "\(puzzle.category.rawValue):\(AnswerMatcher.normalize(puzzle.answer))"
             guard seen.insert(key).inserted else { return }
-            puzzles.append(Puzzle(answer: answer, category: category))
+            puzzles.append(puzzle)
         }
 
-        for song in names.songs.compactMap(cleanTitle) { add(song, .song) }
-        for artist in names.artists.compactMap(cleanArtist) {
-            add(artist, .artist)
+        // Songs: the album is the cryptic hint, the artist the clear one.
+        for song in songs {
+            guard let title = cleanTitle(song.title) else { continue }
+            let artist = song.artist.flatMap(cleanArtist)
+            let album = song.album.flatMap(cleanTitle)
+            // Fall back to the genre when the album is missing or named after the song itself.
+            let albumHint = album.map { "From the album “\($0)”" }
+            let genreHint = song.genre.map { "A \($0) track in your library" }
+            let cryptic = safeHints([albumHint, genreHint], for: title).first
+            add(Puzzle(answer: title, category: .song, hints: safeHints([cryptic, artist.map { "By \($0)" }], for: title)))
+        }
+
+        // Artists: the genre and song count are the cryptic hint, one of their songs the clear one.
+        let byArtist = Dictionary(grouping: songs) { $0.artist.flatMap(cleanArtist) ?? "" }
+        for (artist, theirSongs) in byArtist.sorted(by: { $0.key < $1.key }) where !artist.isEmpty {
+            let genre = theirSongs.lazy.compactMap(\.genre).first
+            let count = theirSongs.count == 1 ? "1 song" : "\(theirSongs.count) songs"
+            let cryptic = genre.map { "\($0), with \(count) in your library" } ?? "\(count) in your library"
+            let knownFor = theirSongs.lazy.compactMap { cleanTitle($0.title) }.first.map { "Known for “\($0)”" }
+            add(Puzzle(answer: artist, category: .artist, hints: safeHints([cryptic, knownFor], for: artist)))
         }
         return puzzles
+    }
+
+    /// Drops missing hints and any that would give the answer away (e.g. a single named after its album).
+    static func safeHints(_ hints: [String?], for answer: String) -> [String] {
+        let answerKey = AnswerMatcher.normalize(answer)
+        return hints.compactMap { $0 }.filter { !AnswerMatcher.normalize($0).contains(answerKey) }
     }
 
     private static func stripFeaturing(_ text: String) -> String {

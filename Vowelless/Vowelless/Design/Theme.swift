@@ -11,6 +11,10 @@ enum Theme {
 
     static let palette: [Color] = Category.allCases.map(\.color)
 
+    /// The home screen title, also drawn by the launch screen and SplashView.
+    static let title = Array("VWLLSS")
+    static let titleTileSize: CGFloat = 50
+
     /// Small deterministic tilt so tiles look hand-placed.
     static func tilt(_ n: Int) -> Angle {
         let angles: [Double] = [-4, 3, -2, 5, -3, 2, -5, 4]

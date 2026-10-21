@@ -1,0 +1,68 @@
+{
+  "identifier" : "4B6E1F2A",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "6740000001",
+      "localizations" : [
+        {
+          "description" : "A handful of 500 coins for hints and vowels.",
+          "displayName" : "500 Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "club.gogoslab.Vowelless.coins500",
+      "referenceName" : "500 Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "2.49",
+      "familyShareable" : false,
+      "internalID" : "6740000002",
+      "localizations" : [
+        {
+          "description" : "A bag of 1,500 coins for hints and vowels.",
+          "displayName" : "1,500 Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "club.gogoslab.Vowelless.coins1500",
+      "referenceName" : "1,500 Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "5.99",
+      "familyShareable" : false,
+      "internalID" : "6740000003",
+      "localizations" : [
+        {
+          "description" : "A treasure chest of 5,000 coins for hints and vowels.",
+          "displayName" : "5,000 Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "club.gogoslab.Vowelless.coins5000",
+      "referenceName" : "5,000 Coins",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

@@ -2,12 +2,17 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(MusicLibrary.self) private var library
+    @Environment(Wallet.self) private var wallet
+    @Environment(Store.self) private var store
+    @State private var showShop = false
     @AppStorage(MusicSource.storageKey) private var musicSource: MusicSource = .builtIn
     private var allPuzzles: [Puzzle] { PuzzleCatalog.puzzles(library: library, source: musicSource) }
     @State private var bounce = false
     @State private var showSettings = false
     @AppStorage(Difficulty.storageKey) private var difficulty: Difficulty = .easy
-
+    /// Hides the title while SplashView's tiles are flying into its place.
+    var titleHidden = false
+    var onTitleFrame: (CGRect) -> Void = { _ in }
 
     var body: some View {
         NavigationStack {
@@ -16,7 +21,7 @@ struct HomeView: View {
                     header
 
                     NavigationLink {
-                        GameView(session: GameSession(puzzles: allPuzzles), accent: Category.song.color)
+                        GameView(session: GameSession(puzzles: allPuzzles, wallet: wallet), accent: Category.song.color)
                     } label: {
                         Label("Play Mixed", systemImage: "shuffle")
                             .font(.system(.title2, design: .rounded, weight: .black))
@@ -33,7 +38,16 @@ struct HomeView: View {
             .background(PlayfulBackground())
             .toolbar(.hidden, for: .navigationBar)
         }
-        .onAppear { bounce = true }
+        .onChange(of: titleHidden, initial: true) { _, hidden in
+            if !hidden { bounce = true }
+        }
+        .sheet(isPresented: $showShop) {
+            ShopView()
+                .fontDesign(.rounded)
+                .environment(wallet)
+                .environment(store)
+                .presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .fontDesign(.rounded)
@@ -51,6 +65,18 @@ struct HomeView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Capsule().fill(.black.opacity(0.2)))
+                Button { showShop = true } label: {
+                    HStack(spacing: 6) {
+                        CoinLabel(amount: wallet.coins, size: 18)
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 16, weight: .black))
+                            .foregroundStyle(Theme.correct)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(.black.opacity(0.2)))
+                }
+                .accessibilityLabel("\(wallet.coins) coins. Get more coins")
                 Spacer()
                 Button { showSettings = true } label: {
                     Image(systemName: "gearshape.fill").font(.system(size: 18, weight: .black))
@@ -60,12 +86,16 @@ struct HomeView: View {
             }
 
             HStack(spacing: 6) {
-                ForEach(Array("VWLLSS".enumerated()), id: \.offset) { i, letter in
-                    let color = Theme.palette[i % Theme.palette.count]
-                    LetterTile(letter: letter, size: 50, face: color, ink: .white, tilt: Theme.tilt(i))
+                ForEach(Theme.title.indices, id: \.self) { i in
+                    LetterTile.title(i)
                         .offset(y: bounce ? -8 : 0)
                         .animation(.easeInOut(duration: 0.7).repeatForever().delay(Double(i) * 0.12), value: bounce)
                 }
+            }
+            .opacity(titleHidden ? 0 : 1)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                // Only SplashView needs this, so stop reporting once it's gone.
+                if titleHidden { onTitleFrame(frame) }
             }
             .padding(.top, 4)
 
@@ -91,7 +121,7 @@ struct HomeView: View {
     private func categoryCard(_ category: Category) -> some View {
         let puzzles = allPuzzles.filter { $0.category == category }
         return NavigationLink {
-            GameView(session: GameSession(puzzles: puzzles), accent: category.color)
+            GameView(session: GameSession(puzzles: puzzles, wallet: wallet), accent: category.color)
         } label: {
             VStack(spacing: 10) {
                 Image(systemName: category.symbol)
@@ -111,4 +141,6 @@ struct HomeView: View {
     HomeView()
         .fontDesign(.rounded)
         .environment(MusicLibrary())
+        .environment(Wallet())
+        .environment(Store(wallet: Wallet()))
 }
