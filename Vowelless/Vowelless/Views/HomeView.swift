@@ -4,9 +4,9 @@ struct HomeView: View {
     @Environment(MusicLibrary.self) private var library
     @Environment(Wallet.self) private var wallet
     @Environment(Store.self) private var store
+    @Environment(GameCenter.self) private var gameCenter
+    @State private var showOnline = false
     @State private var showShop = false
-    @AppStorage(MusicSource.storageKey) private var musicSource: MusicSource = .builtIn
-    private var allPuzzles: [Puzzle] { PuzzleCatalog.puzzles(library: library, source: musicSource) }
     @State private var bounce = false
     @State private var showSettings = false
     @AppStorage(Difficulty.storageKey) private var difficulty: Difficulty = .easy
@@ -20,17 +20,8 @@ struct HomeView: View {
                 VStack(spacing: 28) {
                     header
 
-                    NavigationLink {
-                        GameView(session: GameSession(puzzles: allPuzzles, wallet: wallet), accent: Category.song.color)
-                    } label: {
-                        Label("Play Mixed", systemImage: "shuffle")
-                            .font(.system(.title2, design: .rounded, weight: .black))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
-                    }
-                    .buttonStyle(ChunkyButtonStyle(color: Category.character.color, depth: 8))
-
-                    categoryGrid
+                    modeButton(.online)
+                    modeButton(.train)
                 }
                 .padding(20)
             }
@@ -40,6 +31,16 @@ struct HomeView: View {
         }
         .onChange(of: titleHidden, initial: true) { _, hidden in
             if !hidden { bounce = true }
+        }
+        .fullScreenCover(isPresented: $showOnline, onDismiss: { gameCenter.pendingInvite = nil }) {
+            OnlinePlayView(invite: gameCenter.pendingInvite, difficulty: difficulty) {
+                showOnline = false
+            }
+            .fontDesign(.rounded)
+            .environment(wallet)
+        }
+        .onChange(of: gameCenter.pendingInvite) { _, invite in
+            if invite != nil { showOnline = true }
         }
         .sheet(isPresented: $showShop) {
             ShopView()
@@ -105,35 +106,28 @@ struct HomeView: View {
         }
     }
 
-    /// Two cards per row; an odd last card stretches across the full width.
-    private var categoryGrid: some View {
-        let categories = Category.allCases
-        let rows = stride(from: 0, to: categories.count, by: 2).map { Array(categories[$0..<min($0 + 2, categories.count)]) }
-        return VStack(spacing: 14) {
-            ForEach(rows, id: \.first) { row in
-                HStack(spacing: 14) {
-                    ForEach(row) { categoryCard($0) }
-                }
-            }
-        }
-    }
-
-    private func categoryCard(_ category: Category) -> some View {
-        let puzzles = allPuzzles.filter { $0.category == category }
-        return NavigationLink {
-            GameView(session: GameSession(puzzles: puzzles, wallet: wallet), accent: category.color)
+    private func modeButton(_ mode: PlayMode) -> some View {
+        NavigationLink {
+            CategoryPickerView(mode: mode)
         } label: {
-            VStack(spacing: 10) {
-                Image(systemName: category.symbol)
-                    .font(.system(size: 34, weight: .bold))
+            HStack(spacing: 18) {
+                Image(systemName: mode.symbol)
+                    .font(.system(size: 40, weight: .black))
                     .shadow(color: .black.opacity(0.15), radius: 0, y: 3)
-                Text(category.title)
-                    .font(.system(.headline, design: .rounded, weight: .heavy))
+                    .frame(width: 56)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(mode.title)
+                        .font(.system(.largeTitle, design: .rounded, weight: .black))
+                    Text(mode.subtitle)
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .opacity(0.85)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, minHeight: 100)
+            .frame(maxWidth: .infinity, minHeight: 130, alignment: .leading)
         }
-        .buttonStyle(ChunkyButtonStyle(color: category.color, foreground: category.onColor, depth: 7, cornerRadius: 24))
-        .disabled(puzzles.isEmpty)
+        .buttonStyle(ChunkyButtonStyle(color: mode.color, depth: 9, cornerRadius: 28))
     }
 }
 
@@ -143,4 +137,5 @@ struct HomeView: View {
         .environment(MusicLibrary())
         .environment(Wallet())
         .environment(Store(wallet: Wallet()))
+        .environment(GameCenter())
 }

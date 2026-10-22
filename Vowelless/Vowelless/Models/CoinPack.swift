@@ -4,7 +4,7 @@ import Foundation
 /// App Store Connect and in Products.storekit (used when running from Xcode).
 enum CoinPack: String, CaseIterable, Identifiable {
     case small = "club.gogoslab.Vowelless.coins500"
-    case medium = "club.gogoslab.Vowelless.coins1500"
+    case medium = "club.gogoslab.Vowelless.coins2000"
     case large = "club.gogoslab.Vowelless.coins5000"
 
     var id: String { rawValue }
@@ -12,7 +12,7 @@ enum CoinPack: String, CaseIterable, Identifiable {
     var coins: Int {
         switch self {
         case .small: 500
-        case .medium: 1_500
+        case .medium: 2_000
         case .large: 5_000
         }
     }

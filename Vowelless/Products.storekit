@@ -20,18 +20,18 @@
       "type" : "Consumable"
     },
     {
-      "displayPrice" : "2.49",
+      "displayPrice" : "2.99",
       "familyShareable" : false,
       "internalID" : "6740000002",
       "localizations" : [
         {
-          "description" : "A bag of 1,500 coins for hints and vowels.",
-          "displayName" : "1,500 Coins",
+          "description" : "A bag of 2,000 coins for hints and vowels.",
+          "displayName" : "2,000 Coins",
           "locale" : "en_US"
         }
       ],
-      "productID" : "club.gogoslab.Vowelless.coins1500",
-      "referenceName" : "1,500 Coins",
+      "productID" : "club.gogoslab.Vowelless.coins2000",
+      "referenceName" : "2,000 Coins",
       "type" : "Consumable"
     },
     {

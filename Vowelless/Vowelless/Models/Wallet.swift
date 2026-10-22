@@ -10,6 +10,10 @@ enum Economy {
     static let correctReward = 10
     /// Extra coins for solving a clue without any helpers.
     static let noHelpBonus = 10
+    /// Coins for finishing an online race.
+    static let raceWinReward = 50
+    static let raceTieReward = 25
+    static let raceLossReward = 10
 }
 
 /// The player's coins, saved between launches.

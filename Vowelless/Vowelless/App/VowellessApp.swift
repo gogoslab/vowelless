@@ -5,6 +5,7 @@ struct VowellessApp: App {
     @State private var library = MusicLibrary()
     @State private var wallet: Wallet
     @State private var store: Store
+    @State private var gameCenter = GameCenter()
 
     init() {
         let wallet = Wallet()
@@ -21,7 +22,9 @@ struct VowellessApp: App {
                 .environment(library)
                 .environment(wallet)
                 .environment(store)
+                .environment(gameCenter)
                 .task { await store.start() }
+                .task { gameCenter.authenticate() }
                 .task {
                     if musicSource.usesLibrary { await library.load() }
                 }
