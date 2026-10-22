@@ -28,7 +28,8 @@ final class MatchSearch {
             // Only players who picked the same category are matched together.
             request.playerGroup = RaceCategory.playerGroup(for: category)
 
-            GKMatchmaker.shared().findMatch(for: request) { [weak self] match, _ in
+            // Game Kit may call back on a background thread, so this closure mustn't be main-actor-isolated.
+            GKMatchmaker.shared().findMatch(for: request) { @Sendable [weak self] match, _ in
                 nonisolated(unsafe) let match = match
                 Task { @MainActor in
                     guard let self, !self.finished else {

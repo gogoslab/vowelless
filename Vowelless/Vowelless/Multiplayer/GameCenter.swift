@@ -22,7 +22,7 @@ final class GameCenter: NSObject {
         guard status == .unknown else { return }
         status = .signingIn
         // Game Kit may call this on a background thread, and more than once (e.g. after signing in from Settings).
-        GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, _ in
+        GKLocalPlayer.local.authenticateHandler = { @Sendable [weak self] viewController, _ in
             nonisolated(unsafe) let viewController = viewController
             Task { @MainActor in
                 guard let self else { return }

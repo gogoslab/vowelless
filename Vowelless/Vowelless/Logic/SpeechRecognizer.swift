@@ -70,10 +70,7 @@ final class SpeechRecognizer {
             let input = audioEngine.inputNode
             let format = input.outputFormat(forBus: 0)
             input.removeTap(onBus: 0)
-            nonisolated(unsafe) let bufferRequest = request
-            input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
-                bufferRequest.append(buffer)
-            }
+            input.installTap(onBus: 0, bufferSize: 1024, format: format, block: Self.tapBlock(feeding: request))
             audioEngine.prepare()
             try audioEngine.start()
         } catch {
@@ -83,14 +80,11 @@ final class SpeechRecognizer {
         }
 
         status = .listening
-        task = recognizer.recognitionTask(with: request!) { [weak self] result, error in
-            let text = result?.bestTranscription.formattedString
-            let isFinal = result?.isFinal ?? false
-            let failed = error != nil
+        task = recognizer.recognitionTask(with: request!, resultHandler: Self.resultHandler { [weak self] text, isFinal, failed in
             Task { @MainActor in
                 self?.handle(text: text, isFinal: isFinal, failed: failed)
             }
-        }
+        })
         maxTimer = Task { [weak self, maxDuration] in
             try? await Task.sleep(for: maxDuration)
             guard !Task.isCancelled else { return }
@@ -159,7 +153,23 @@ final class SpeechRecognizer {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
-    private static func requestPermissions() async -> Bool {
+    // The audio tap and Speech callbacks run on background threads. Closures written inside this
+    // main-actor class would be main-actor-isolated, and Swift traps when one runs off the main thread,
+    // so they're built in these nonisolated helpers instead.
+
+    private nonisolated static func tapBlock(feeding request: SFSpeechAudioBufferRecognitionRequest) -> AVAudioNodeTapBlock {
+        { buffer, _ in request.append(buffer) }
+    }
+
+    private nonisolated static func resultHandler(
+        _ deliver: @escaping @Sendable (_ text: String?, _ isFinal: Bool, _ failed: Bool) -> Void
+    ) -> (SFSpeechRecognitionResult?, Error?) -> Void {
+        { result, error in
+            deliver(result?.bestTranscription.formattedString, result?.isFinal ?? false, error != nil)
+        }
+    }
+
+    private nonisolated static func requestPermissions() async -> Bool {
         let speech = await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
         }
