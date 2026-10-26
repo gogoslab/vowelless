@@ -166,13 +166,7 @@ struct GameView: View {
 
     private func clueArea(_ puzzle: Puzzle) -> some View {
         VStack(spacing: 20) {
-            Label(puzzle.category.title, systemImage: puzzle.category.symbol)
-                .font(.system(.headline, design: .rounded, weight: .heavy))
-                .foregroundStyle(puzzle.category.onColor)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Capsule().fill(puzzle.category.color))
-                .background(Capsule().fill(puzzle.category.color.darker()).offset(y: 4))
+            CategoryBadge(puzzle: puzzle)
 
             ClueBoard(
                 answer: puzzle.answer,

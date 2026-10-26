@@ -18,7 +18,7 @@ enum RaceCategory {
 
     /// Bundled puzzles only: Music library puzzles differ from phone to phone.
     static func pool(for category: Category?) -> [Puzzle] {
-        guard let category else { return PuzzleStore.builtIn }
+        guard let category else { return PuzzleStore.builtIn.mixed }
         return PuzzleStore.builtIn.filter { $0.category == category }
     }
 }

@@ -190,3 +190,23 @@ struct RaceCategoryTests {
         #expect(RaceCategory.pool(for: .movie).count >= RaceEngine.rounds)
     }
 }
+
+struct PuzzleLevelTests {
+    @Test func aboutThirtyPercentOfEachCategoryIsHard() {
+        for category in Category.allCases {
+            let puzzles = PuzzleStore.builtIn.filter { $0.category == category }
+            let share = Double(puzzles.filter { $0.level == .hard }.count) / Double(puzzles.count)
+            #expect((0.27...0.33).contains(share), "\(category): \(share)")
+        }
+    }
+
+    @Test func mixedHasOnlyEasyAnswers() {
+        #expect(!PuzzleStore.builtIn.mixed.isEmpty)
+        #expect(PuzzleStore.builtIn.mixed.allSatisfy { $0.level == .easy })
+        #expect(RaceCategory.pool(for: nil).allSatisfy { $0.level == .easy })
+    }
+
+    @Test func categoriesKeepTheirHardAnswers() {
+        #expect(RaceCategory.pool(for: .book).contains { $0.level == .hard })
+    }
+}

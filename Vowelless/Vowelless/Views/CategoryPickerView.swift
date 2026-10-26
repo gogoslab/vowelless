@@ -116,7 +116,7 @@ struct CategoryPickerView: View {
         )
         switch mode {
         case .train:
-            let puzzles = category.map { c in trainingPuzzles.filter { $0.category == c } } ?? trainingPuzzles
+            let puzzles = category.map { c in trainingPuzzles.filter { $0.category == c } } ?? trainingPuzzles.mixed
             NavigationLink {
                 GameView(session: GameSession(puzzles: puzzles, wallet: wallet), accent: category?.color ?? Category.song.color)
             } label: { label }
