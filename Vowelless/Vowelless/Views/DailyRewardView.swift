@@ -96,5 +96,6 @@ struct DailyRewardView: View {
     private func claim(multiplier: Int) {
         guard let amount = reward.claim(into: wallet, multiplier: multiplier) else { return }
         withAnimation(.spring(bounce: 0.5)) { claimed = amount }
+        Sounds.play(.coin)
     }
 }

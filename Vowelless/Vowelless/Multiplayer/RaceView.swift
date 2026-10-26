@@ -41,8 +41,17 @@ struct RaceView: View {
             guess = ""
             if case .playing = engine.phase { focused = true }
         }
-        .onChange(of: engine.outcome) { _, outcome in award(outcome) }
+        .onChange(of: engine.outcome) { _, outcome in
+            award(outcome)
+            if let outcome { Sounds.play(outcome == .lost ? .lose : .fanfare) }
+        }
+        .onChange(of: wrongAttempts) { Sounds.play(.wrong) }
         .onChange(of: engine.phase) { _, phase in
+            switch phase {
+            case .roundOver(_, let winner?): Sounds.play(winner == engine.localPlayerID ? .correct : .lose)
+            case .roundOver(_, nil): Sounds.play(.reveal)
+            default: break
+            }
             if case .roundOver(_, let winner) = phase, winner == engine.localPlayerID, let answerTime {
                 wonClueTimes.append(answerTime)
             }
@@ -173,6 +182,7 @@ struct RaceView: View {
             let total = engine.timing.roundLength.seconds
             let elapsed = engine.roundStartedAt.map { context.date.timeIntervalSince($0) } ?? 0
             let left = max(0, 1 - elapsed / total)
+            let secondsLeft = Int((total - elapsed).rounded(.up))
             GeometryReader { geo in
                 Capsule().fill(.black.opacity(0.25))
                     .overlay(alignment: .leading) {
@@ -182,6 +192,9 @@ struct RaceView: View {
             }
             .frame(height: 10)
             .padding(.horizontal, 40)
+            .onChange(of: secondsLeft) { _, left in
+                if (1...5).contains(left) { Sounds.play(.tick) }
+            }
         }
     }
 

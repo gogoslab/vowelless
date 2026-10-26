@@ -75,6 +75,9 @@ struct FreeCoinsCard: View {
     }
 
     private func watch() {
-        ads.show { wallet.earn(RewardedAds.coinReward) }
+        ads.show {
+            wallet.earn(RewardedAds.coinReward)
+            Sounds.play(.coin)
+        }
     }
 }

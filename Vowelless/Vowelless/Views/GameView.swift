@@ -36,6 +36,13 @@ struct GameView: View {
         .sensoryFeedback(.success, trigger: session.score)
         .sensoryFeedback(.impact(weight: .light), trigger: session.revealedVowels)
         .sensoryFeedback(.start, trigger: speech.isListening)
+        .onChange(of: session.wrongAttempts) { Sounds.play(.wrong) }
+        .onChange(of: session.correctCount) { Sounds.play(.correct) }
+        .onChange(of: session.hintsShown) { _, shown in if shown > 0 { Sounds.play(.pop) } }
+        .onChange(of: session.revealedVowels) { _, vowels in if !vowels.isEmpty { Sounds.play(.pop) } }
+        .onChange(of: session.revealed) { _, revealed in
+            if revealed, session.lastGuessCorrect == false { Sounds.play(.reveal) }
+        }
         .onChange(of: session.index) {
             speech.cancel()
             micProblem = nil
@@ -50,6 +57,7 @@ struct GameView: View {
         }
         .onChange(of: session.isFinished) { _, finished in
             guard finished else { return }
+            Sounds.play(.fanfare)
             if daily == nil {
                 progress.trainingRoundFinished(score: session.score, maxScore: session.maxScore)
             } else {

@@ -143,6 +143,7 @@ struct ShopView: View {
             withAnimation(.spring(bounce: 0.5)) {
                 switch outcome {
                 case .purchased(let coins):
+                    Sounds.play(.coin)
                     message = Message(text: "+\(coins.formatted()) coins added! 🎉", isError: false)
                 case .pending:
                     message = Message(text: "Waiting for approval…", isError: false)

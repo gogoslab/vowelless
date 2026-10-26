@@ -5,6 +5,7 @@ struct SettingsView: View {
     @AppStorage(MusicSource.storageKey) private var musicSource: MusicSource = .builtIn
     @Environment(MusicLibrary.self) private var library
     @Environment(RewardedAds.self) private var ads
+    @AppStorage(Sounds.enabledKey) private var soundsEnabled = true
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -36,6 +37,18 @@ struct SettingsView: View {
                     .padding(.top, 12)
 
                 musicSourceCard
+
+                Toggle(isOn: $soundsEnabled) {
+                    Label("Sound effects", systemImage: soundsEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.system(.title3, design: .rounded, weight: .black))
+                        .foregroundStyle(Theme.ink)
+                }
+                .tint(Theme.correct)
+                .padding(20)
+                .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(.white))
+                .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color.white.darker(0.3)).offset(y: 5))
+                .padding(.top, 12)
+                .onChange(of: soundsEnabled) { _, on in if on { Sounds.play(.pop) } }
 
                 if ads.privacyOptionsRequired {
                     Button {

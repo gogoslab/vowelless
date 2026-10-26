@@ -26,6 +26,9 @@ struct ChunkyButtonStyle: ButtonStyle {
             .offset(y: pressed ? depth : 0)
             .padding(.bottom, depth)
             .animation(.spring(duration: 0.18, bounce: 0.4), value: pressed)
+            .onChange(of: pressed) { _, isPressed in
+                if isPressed { Sounds.play(.tap) }
+            }
     }
 }
 

@@ -151,6 +151,7 @@ final class SpeechRecognizer {
         onPartial = nil
         onFinish = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        Sounds.restoreAudioSession()
     }
 
     // The audio tap and Speech callbacks run on background threads. Closures written inside this
