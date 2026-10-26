@@ -11,6 +11,9 @@
 		<key>UIImageRespectsSafeAreaInsets</key>
 		<false/>
 	</dict>
+	<!-- Rewarded ads on/off. Off: the AdMob SDK is never started and no ad buttons or consent form appear. -->
+	<key>VWLAdsEnabled</key>
+	<false/>
 	<!-- AdMob. These are Google's test IDs; replace both with the real ones from your AdMob account before release. -->
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3940256099942544~1458002511</string>

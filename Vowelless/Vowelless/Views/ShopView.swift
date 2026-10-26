@@ -22,7 +22,9 @@ struct ShopView: View {
             VStack(spacing: 20) {
                 header
 
-                FreeCoinsCard()
+                if RewardedAds.isEnabled {
+                    FreeCoinsCard()
+                }
 
                 ForEach(CoinPack.allCases) { pack in
                     packCard(pack)

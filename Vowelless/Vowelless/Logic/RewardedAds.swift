@@ -39,6 +39,12 @@ final class RewardedAds: NSObject {
         super.init()
     }
 
+    /// The master switch: `VWLAdsEnabled` in Info.plist. When off, the ad SDK is never started,
+    /// no consent form is shown and every ad button stays hidden.
+    static var isEnabled: Bool {
+        Bundle.main.object(forInfoDictionaryKey: "VWLAdsEnabled") as? Bool ?? false
+    }
+
     var adUnitID: String {
         Bundle.main.object(forInfoDictionaryKey: "VWLRewardedAdUnitID") as? String ?? Self.testAdUnitID
     }
@@ -50,6 +56,10 @@ final class RewardedAds: NSObject {
     func start() async {
         guard !started else { return }
         started = true
+        guard Self.isEnabled else {
+            state = .unavailable
+            return
+        }
         await updateConsent()
         guard ConsentInformation.shared.canRequestAds else {
             state = .unavailable
@@ -62,7 +72,7 @@ final class RewardedAds: NSObject {
     /// Shows an ad; `onReward` runs only if the player watched it to the end.
     /// `counted` ads use up one of today's watches.
     func show(counted: Bool = true, onReward: @escaping () -> Void) {
-        guard let ad, isReady, !counted || watchesLeftToday > 0,
+        guard Self.isEnabled, let ad, isReady, !counted || watchesLeftToday > 0,
               let root = GameCenter.topViewController() else { return }
         pendingReward = { [weak self] in
             if counted { self?.recordWatch() }
