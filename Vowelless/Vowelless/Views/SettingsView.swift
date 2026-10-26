@@ -4,6 +4,7 @@ struct SettingsView: View {
     @AppStorage(Difficulty.storageKey) private var difficulty: Difficulty = .easy
     @AppStorage(MusicSource.storageKey) private var musicSource: MusicSource = .builtIn
     @Environment(MusicLibrary.self) private var library
+    @Environment(RewardedAds.self) private var ads
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -35,6 +36,17 @@ struct SettingsView: View {
                     .padding(.top, 12)
 
                 musicSourceCard
+
+                if ads.privacyOptionsRequired {
+                    Button {
+                        Task { await ads.showPrivacyOptions() }
+                    } label: {
+                        Label("Ad privacy choices", systemImage: "hand.raised.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(ChunkyButtonStyle(color: .white, foreground: Theme.ink, depth: 5, cornerRadius: 20))
+                    .padding(.top, 12)
+                }
             }
             .padding(20)
         }
@@ -168,4 +180,5 @@ struct SettingsView: View {
     SettingsView()
         .fontDesign(.rounded)
         .environment(MusicLibrary())
+        .environment(RewardedAds())
 }

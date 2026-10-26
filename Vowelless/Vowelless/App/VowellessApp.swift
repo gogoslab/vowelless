@@ -6,6 +6,8 @@ struct VowellessApp: App {
     @State private var wallet: Wallet
     @State private var store: Store
     @State private var gameCenter = GameCenter()
+    @State private var ads = RewardedAds()
+    @State private var dailyReward = DailyReward()
 
     init() {
         let wallet = Wallet()
@@ -23,6 +25,8 @@ struct VowellessApp: App {
                 .environment(wallet)
                 .environment(store)
                 .environment(gameCenter)
+                .environment(ads)
+                .environment(dailyReward)
                 .task { await store.start() }
                 .task { gameCenter.authenticate() }
                 .task {

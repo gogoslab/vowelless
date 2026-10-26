@@ -6,6 +6,9 @@ struct HomeView: View {
     @Environment(Store.self) private var store
     @Environment(GameCenter.self) private var gameCenter
     @State private var showOnline = false
+    @State private var showDailyReward = false
+    @Environment(DailyReward.self) private var dailyReward
+    @Environment(RewardedAds.self) private var ads
     @State private var showShop = false
     @State private var bounce = false
     @State private var showSettings = false
@@ -30,7 +33,23 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
         }
         .onChange(of: titleHidden, initial: true) { _, hidden in
-            if !hidden { bounce = true }
+            if !hidden {
+                bounce = true
+                if dailyReward.isAvailable { showDailyReward = true }
+            }
+        }
+        .task {
+            // Wait for the splash, so the consent form (if any) doesn't cover the animation.
+            try? await Task.sleep(for: .seconds(2))
+            await ads.start()
+        }
+        .sheet(isPresented: $showDailyReward) {
+            DailyRewardView()
+                .fontDesign(.rounded)
+                .environment(dailyReward)
+                .environment(wallet)
+                .environment(ads)
+                .presentationDetents([.medium, .large])
         }
         .fullScreenCover(isPresented: $showOnline, onDismiss: { gameCenter.pendingInvite = nil }) {
             OnlinePlayView(invite: gameCenter.pendingInvite, difficulty: difficulty) {
@@ -47,12 +66,14 @@ struct HomeView: View {
                 .fontDesign(.rounded)
                 .environment(wallet)
                 .environment(store)
+                .environment(ads)
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .fontDesign(.rounded)
                 .environment(library)
+                .environment(ads)
                 .presentationDragIndicator(.visible)
         }
     }
@@ -62,6 +83,8 @@ struct HomeView: View {
             HStack {
                 Label(difficulty.title, systemImage: difficulty.symbol)
                     .font(.system(.subheadline, design: .rounded, weight: .heavy))
+                    .lineLimit(1)
+                    .fixedSize()
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -78,7 +101,14 @@ struct HomeView: View {
                     .background(Capsule().fill(.black.opacity(0.2)))
                 }
                 .accessibilityLabel("\(wallet.coins) coins. Get more coins")
-                Spacer()
+                Spacer(minLength: 0)
+                if dailyReward.isAvailable {
+                    Button { showDailyReward = true } label: {
+                        Text("🎁").font(.system(size: 22))
+                    }
+                    .buttonStyle(ChunkyButtonStyle(color: Category.artist.color, foreground: Theme.ink, depth: 4, cornerRadius: 14, horizontalPadding: 12))
+                    .accessibilityLabel("Daily reward")
+                }
                 Button { showSettings = true } label: {
                     Image(systemName: "gearshape.fill").font(.system(size: 18, weight: .black))
                 }
@@ -138,4 +168,6 @@ struct HomeView: View {
         .environment(Wallet())
         .environment(Store(wallet: Wallet()))
         .environment(GameCenter())
+        .environment(RewardedAds())
+        .environment(DailyReward())
 }

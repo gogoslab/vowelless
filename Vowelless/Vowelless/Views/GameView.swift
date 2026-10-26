@@ -12,6 +12,7 @@ struct GameView: View {
     @State private var speech = SpeechRecognizer()
     @State private var micProblem: SpeechRecognizer.Status?
     @Environment(Store.self) private var store
+    @Environment(RewardedAds.self) private var ads
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -39,6 +40,7 @@ struct GameView: View {
                 .fontDesign(.rounded)
                 .environment(session.wallet)
                 .environment(store)
+                .environment(ads)
                 .presentationDragIndicator(.visible)
         }
     }
@@ -221,11 +223,14 @@ struct GameView: View {
                         CoinLabel(amount: session.cantAfford!, size: 20, color: Theme.orange)
                     }
                     .foregroundStyle(Theme.orange)
-                    Button { showShop = true } label: {
-                        Label("Get coins", systemImage: "plus.circle.fill")
-                            .font(.system(.headline, design: .rounded, weight: .black))
+                    HStack(spacing: 10) {
+                        FreeCoinsCard(compact: true)
+                        Button { showShop = true } label: {
+                            Label("Get coins", systemImage: "plus.circle.fill")
+                                .font(.system(.headline, design: .rounded, weight: .black))
+                        }
+                        .buttonStyle(ChunkyButtonStyle(color: Theme.correct, depth: 5, cornerRadius: 16))
                     }
-                    .buttonStyle(ChunkyButtonStyle(color: Theme.correct, depth: 5, cornerRadius: 16))
                 }
             case (false, nil) where session.missedVowel != nil:
                 Text("No \(String(session.missedVowel!))'s in this one!").foregroundStyle(Theme.orange)
@@ -437,5 +442,7 @@ private struct HintCard: View {
         ))
     }
     .environment(Store(wallet: Wallet()))
+    .environment(RewardedAds())
+    .environment(Wallet())
     .fontDesign(.rounded)
 }

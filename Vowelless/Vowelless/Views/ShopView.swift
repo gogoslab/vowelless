@@ -7,6 +7,7 @@ struct ShopView: View {
     @Environment(Wallet.self) private var wallet
     @Environment(\.dismiss) private var dismiss
     @Environment(\.purchase) private var purchase
+    @Environment(RewardedAds.self) private var ads
 
     @State private var buying: CoinPack?
     @State private var message: Message?
@@ -20,6 +21,8 @@ struct ShopView: View {
         ScrollView {
             VStack(spacing: 20) {
                 header
+
+                FreeCoinsCard()
 
                 ForEach(CoinPack.allCases) { pack in
                     packCard(pack)
@@ -172,4 +175,5 @@ private struct CoinStack: View {
     ShopView()
         .environment(wallet)
         .environment(Store(wallet: wallet))
+        .environment(RewardedAds())
 }
