@@ -1,3 +1,4 @@
+import GameKit
 import SwiftUI
 
 struct HomeView: View {
@@ -8,6 +9,9 @@ struct HomeView: View {
     @State private var showOnline = false
     @State private var showDailyReward = false
     @Environment(DailyReward.self) private var dailyReward
+    @Environment(DailyPuzzle.self) private var dailyPuzzle
+    @State private var showDailyResult = false
+    @State private var showSignInForTrophies = false
     @Environment(RewardedAds.self) private var ads
     @State private var showShop = false
     @State private var bounce = false
@@ -23,6 +27,7 @@ struct HomeView: View {
                 VStack(spacing: 28) {
                     header
 
+                    dailyCard
                     modeButton(.online)
                     modeButton(.train)
                 }
@@ -81,14 +86,6 @@ struct HomeView: View {
     private var header: some View {
         VStack(spacing: 10) {
             HStack {
-                Label(difficulty.title, systemImage: difficulty.symbol)
-                    .font(.system(.subheadline, design: .rounded, weight: .heavy))
-                    .lineLimit(1)
-                    .fixedSize()
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Capsule().fill(.black.opacity(0.2)))
                 Button { showShop = true } label: {
                     HStack(spacing: 6) {
                         CoinLabel(amount: wallet.coins, size: 18)
@@ -106,13 +103,29 @@ struct HomeView: View {
                     Button { showDailyReward = true } label: {
                         Text("🎁").font(.system(size: 22))
                     }
-                    .buttonStyle(ChunkyButtonStyle(color: Category.artist.color, foreground: Theme.ink, depth: 4, cornerRadius: 14, horizontalPadding: 12))
+                    .buttonStyle(ChunkyButtonStyle(color: Category.artist.color, foreground: Theme.ink, depth: 4, cornerRadius: 14, horizontalPadding: 10))
                     .accessibilityLabel("Daily reward")
+                }
+                Button {
+                    if gameCenter.isSignedIn {
+                        GKAccessPoint.shared.trigger(state: .dashboard) {}
+                    } else {
+                        showSignInForTrophies = true
+                    }
+                } label: {
+                    Image(systemName: "trophy.fill").font(.system(size: 18, weight: .black))
+                }
+                .buttonStyle(ChunkyButtonStyle(color: Category.artist.color, foreground: Theme.ink, depth: 4, cornerRadius: 14, horizontalPadding: 12))
+                .accessibilityLabel("Leaderboards and achievements")
+                .alert("Sign in to Game Center", isPresented: $showSignInForTrophies) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("Leaderboards and achievements use Game Center. Sign in under Settings → Game Center; your progress so far will be sent when you do.")
                 }
                 Button { showSettings = true } label: {
                     Image(systemName: "gearshape.fill").font(.system(size: 18, weight: .black))
                 }
-                .buttonStyle(ChunkyButtonStyle(color: .white, foreground: Theme.ink, depth: 4, cornerRadius: 14))
+                .buttonStyle(ChunkyButtonStyle(color: .white, foreground: Theme.ink, depth: 4, cornerRadius: 14, horizontalPadding: 12))
                 .accessibilityLabel("Settings")
             }
 
@@ -133,6 +146,56 @@ struct HomeView: View {
             Text("Guess it without the vowels!")
                 .font(.system(.headline, design: .rounded, weight: .bold))
                 .foregroundStyle(.white.opacity(0.85))
+        }
+    }
+
+    @ViewBuilder
+    private var dailyCard: some View {
+        let label = HStack(spacing: 14) {
+            Image(systemName: dailyPuzzle.isPlayedToday ? "checkmark.seal.fill" : "calendar")
+                .font(.system(size: 30, weight: .black))
+                .frame(width: 44)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Daily #\(dailyPuzzle.todayNumber)")
+                    .font(.system(.title2, design: .rounded, weight: .black))
+                Text(dailyPuzzle.isPlayedToday
+                     ? dailyPuzzle.results.map(\.emoji).joined()
+                     : "Today's 5 clues")
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .lineLimit(1)
+                    .opacity(0.85)
+            }
+            Spacer(minLength: 0)
+            if dailyPuzzle.isPlayedToday {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 20, weight: .black))
+                    .accessibilityLabel("Share")
+            }
+            if dailyPuzzle.currentStreak > 0 {
+                Text("🔥\(dailyPuzzle.currentStreak)")
+                    .font(.system(.title3, design: .rounded, weight: .black))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        let style = ChunkyButtonStyle(color: Category.book.color, depth: 8, cornerRadius: 24)
+
+        if dailyPuzzle.isPlayedToday {
+            Button { showDailyResult = true } label: { label }
+                .buttonStyle(style)
+                .sheet(isPresented: $showDailyResult) {
+                    DailyResultView()
+                        .environment(dailyPuzzle)
+                        .padding(24)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(PlayfulBackground())
+                        .fontDesign(.rounded)
+                        .presentationDetents([.medium])
+                }
+        } else {
+            NavigationLink {
+                DailyGameView(daily: dailyPuzzle, wallet: wallet)
+            } label: { label }
+            .buttonStyle(style)
         }
     }
 
@@ -170,4 +233,6 @@ struct HomeView: View {
         .environment(GameCenter())
         .environment(RewardedAds())
         .environment(DailyReward())
+        .environment(DailyPuzzle())
+        .environment(PlayerProgress())
 }

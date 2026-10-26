@@ -6,6 +6,11 @@ struct RaceView: View {
     var onExit: () -> Void
 
     @Environment(Wallet.self) private var wallet
+    @Environment(PlayerProgress.self) private var progress
+    /// Seconds into the clue when this player sent a correct answer, and the times of clues they won.
+    @State private var answerTime: Double?
+    @State private var wonClueTimes: [Double] = []
+    @State private var trailedByThree = false
     @State private var guess = ""
     @State private var wrongAttempts = 0
     @State private var speech = SpeechRecognizer()
@@ -37,6 +42,16 @@ struct RaceView: View {
             if case .playing = engine.phase { focused = true }
         }
         .onChange(of: engine.outcome) { _, outcome in award(outcome) }
+        .onChange(of: engine.phase) { _, phase in
+            if case .roundOver(_, let winner) = phase, winner == engine.localPlayerID, let answerTime {
+                wonClueTimes.append(answerTime)
+            }
+            if case .playing = phase { answerTime = nil }
+        }
+        .onChange(of: engine.scores) { _, scores in
+            let mine = scores[engine.localPlayerID, default: 0]
+            if engine.opponentIDs.contains(where: { scores[$0, default: 0] - mine >= 3 }) { trailedByThree = true }
+        }
         .onDisappear {
             speech.cancel()
             race.leave()
@@ -252,6 +267,7 @@ struct RaceView: View {
     private func check(_ text: String, for puzzle: Puzzle) {
         guard case .playing = engine.phase else { return }
         if AnswerMatcher.matches(text, puzzle.answer) {
+            answerTime = engine.roundStartedAt.map { Date.now.timeIntervalSince($0) }
             engine.submitCorrect()
         } else {
             withAnimation(.default) { wrongAttempts += 1 }
@@ -316,6 +332,7 @@ struct RaceView: View {
         case .lost: race.rewards.lost
         }
         wallet.earn(reward)
+        progress.raceFinished(won: outcome == .won && engine.phase == .finished, clueTimes: wonClueTimes, trailedByThree: trailedByThree)
     }
 }
 

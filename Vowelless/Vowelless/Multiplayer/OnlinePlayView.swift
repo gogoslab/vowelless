@@ -10,6 +10,7 @@ struct OnlinePlayView: View {
     let onClose: () -> Void
 
     @Environment(GameCenter.self) private var gameCenter
+    @Environment(PlayerProgress.self) private var progress
     @State private var search = MatchSearch()
     @State private var race: ActiveRace?
     @State private var showFriendPicker = false
@@ -20,6 +21,7 @@ struct OnlinePlayView: View {
         Group {
             if let race {
                 RaceView(race: race, onExit: onClose)
+                    .environment(progress)
             } else {
                 searching
             }

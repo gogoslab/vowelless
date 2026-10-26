@@ -2,23 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIColorName</key>
-		<string>LaunchBackground</string>
-		<key>UIImageName</key>
-		<string>LaunchLogo</string>
-		<key>UIImageRespectsSafeAreaInsets</key>
-		<false/>
-	</dict>
-	<!-- Rewarded ads on/off. Off: the AdMob SDK is never started and no ad buttons or consent form appear. -->
-	<key>VWLAdsEnabled</key>
-	<false/>
-	<!-- AdMob. These are Google's test IDs; replace both with the real ones from your AdMob account before release. -->
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3940256099942544~1458002511</string>
-	<key>VWLRewardedAdUnitID</key>
-	<string>ca-app-pub-3940256099942544/1712485313</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
@@ -190,5 +175,20 @@
 			<string>3qcr597p9d.skadnetwork</string>
 		</dict>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>LaunchLogo</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<false/>
+	</dict>
+	<key>VWLAdsEnabled</key>
+	<false/>
+	<key>VWLDailyPuzzlesURL</key>
+	<string></string>
+	<key>VWLRewardedAdUnitID</key>
+	<string>ca-app-pub-3940256099942544/1712485313</string>
 </dict>
 </plist>

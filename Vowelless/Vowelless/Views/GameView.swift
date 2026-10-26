@@ -3,9 +3,14 @@ import SwiftUI
 struct GameView: View {
     @State var session: GameSession
     var accent: Color = Category.song.color
+    /// Set when playing the daily puzzle: fixed clue layout, one try, shareable result.
+    var daily: DailyPuzzle? = nil
 
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(Difficulty.storageKey) private var difficulty: Difficulty = .easy
+    @AppStorage(Difficulty.storageKey) private var savedDifficulty: Difficulty = .easy
+    /// Everyone sees the daily puzzle the same way, so results are comparable.
+    private var difficulty: Difficulty { daily == nil ? savedDifficulty : .easy }
+    @State private var dailyCoins: Int?
     @State private var guess = ""
     @State private var showVowels = false
     @State private var showShop = false
@@ -13,6 +18,7 @@ struct GameView: View {
     @State private var micProblem: SpeechRecognizer.Status?
     @Environment(Store.self) private var store
     @Environment(RewardedAds.self) private var ads
+    @Environment(PlayerProgress.self) private var progress
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -34,7 +40,27 @@ struct GameView: View {
             speech.cancel()
             micProblem = nil
         }
-        .onDisappear { speech.cancel() }
+        .onDisappear {
+            speech.cancel()
+            // Leaving the daily puzzle early still uses up today's try.
+            if daily != nil, !session.isFinished {
+                session.forfeitRemaining()
+                recordDaily()
+            }
+        }
+        .onChange(of: session.isFinished) { _, finished in
+            guard finished else { return }
+            if daily == nil {
+                progress.trainingRoundFinished(score: session.score, maxScore: session.maxScore)
+            } else {
+                recordDaily()
+            }
+        }
+        .onAppear {
+            session.onClueSolved = { [progress] puzzle, clean, stars in
+                progress.clueSolved(puzzle, clean: clean, stars: stars)
+            }
+        }
         .sheet(isPresented: $showShop) {
             ShopView()
                 .fontDesign(.rounded)
@@ -366,7 +392,32 @@ struct GameView: View {
 
     // MARK: - Result
 
+    private func recordDaily() {
+        guard let daily, dailyCoins == nil else { return }
+        dailyCoins = daily.record(session.results, score: session.score, into: session.wallet)
+        progress.dailyFinished(score: daily.score, maxScore: daily.maxScore, streak: daily.currentStreak)
+    }
+
+    @ViewBuilder
     private var resultView: some View {
+        if let daily {
+            VStack(spacing: 24) {
+                Spacer()
+                DailyResultView(coinsEarned: dailyCoins)
+                    .environment(daily)
+                Spacer()
+                Button { dismiss() } label: {
+                    Label("Home", systemImage: "house.fill").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(ChunkyButtonStyle(color: .white, foreground: Theme.ink))
+            }
+            .padding(20)
+        } else {
+            trainingResult
+        }
+    }
+
+    private var trainingResult: some View {
         VStack(spacing: 24) {
             Spacer()
             Text("🏆")
@@ -444,5 +495,6 @@ private struct HintCard: View {
     .environment(Store(wallet: Wallet()))
     .environment(RewardedAds())
     .environment(Wallet())
+    .environment(PlayerProgress())
     .fontDesign(.rounded)
 }

@@ -84,10 +84,22 @@ struct CategoryPickerView: View {
             Text(mode.subtitle)
                 .font(.system(.headline, design: .rounded, weight: .bold))
                 .foregroundStyle(.white.opacity(0.85))
-            Text("Pick a category")
-                .font(.system(.title3, design: .rounded, weight: .heavy))
-                .foregroundStyle(.white.opacity(0.9))
-                .padding(.top, 6)
+            HStack {
+                Text("Pick a category")
+                    .font(.system(.title3, design: .rounded, weight: .heavy))
+                    .foregroundStyle(.white.opacity(0.9))
+                Spacer()
+                Label(difficulty.title, systemImage: difficulty.symbol)
+                    .font(.system(.subheadline, design: .rounded, weight: .heavy))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(.black.opacity(0.2)))
+                    .accessibilityLabel("Difficulty: \(difficulty.title)")
+            }
+            .padding(.top, 6)
         }
     }
 

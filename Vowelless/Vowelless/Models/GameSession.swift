@@ -5,6 +5,7 @@ import Observation
 final class GameSession {
     private let pool: [Puzzle]
     private let rounds: Int
+    private let shuffles: Bool
     let wallet: Wallet
     private(set) var puzzles: [Puzzle] = []
     private(set) var index = 0
@@ -22,14 +23,20 @@ final class GameSession {
     private(set) var coinsEarned = 0
     /// Set when the player tried a helper they can't afford: the price they were short for.
     private(set) var cantAfford: Int?
+    /// Called after each correct answer with the puzzle, whether it was solved without help, and the stars won.
+    var onClueSolved: ((Puzzle, Bool, Int) -> Void)?
+    /// How each finished clue went, in order.
+    private(set) var results: [ClueResult] = []
 
     /// Points for a correct answer: 3 with no help, minus one per hint or vowel, never below 1.
     static let maxPoints = 3
 
-    init(puzzles: [Puzzle], wallet: Wallet, rounds: Int = 10) {
+    /// `shuffles: false` plays `puzzles` in the given order (the daily puzzle).
+    init(puzzles: [Puzzle], wallet: Wallet, rounds: Int = 10, shuffles: Bool = true) {
         self.pool = puzzles
         self.wallet = wallet
         self.rounds = rounds
+        self.shuffles = shuffles
         restart()
     }
 
@@ -78,6 +85,8 @@ final class GameSession {
         if AnswerMatcher.matches(guess, current.answer) {
             score += pointsAvailable
             correctCount += 1
+            results.append(usedHelpers ? .helped : .clean)
+            onClueSolved?(current, !usedHelpers, pointsAvailable)
             lastReward = Economy.correctReward + (usedHelpers ? 0 : Economy.noHelpBonus)
             coinsEarned += lastReward
             wallet.earn(lastReward)
@@ -93,9 +102,18 @@ final class GameSession {
     }
 
     func giveUp() {
+        guard !revealed else { return }
         cantAfford = nil
+        results.append(.missed)
         revealed = true
         lastGuessCorrect = false
+    }
+
+    /// Leaving early: every clue not yet finished counts as missed.
+    func forfeitRemaining() {
+        while results.count < puzzles.count { results.append(.missed) }
+        index = puzzles.count
+        revealed = false
     }
 
     func next() {
@@ -109,7 +127,8 @@ final class GameSession {
     }
 
     func restart() {
-        puzzles = Array(pool.shuffled().prefix(rounds))
+        puzzles = Array((shuffles ? pool.shuffled() : pool).prefix(rounds))
+        results = []
         index = 0
         score = 0
         correctCount = 0

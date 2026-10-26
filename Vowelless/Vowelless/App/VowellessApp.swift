@@ -8,6 +8,8 @@ struct VowellessApp: App {
     @State private var gameCenter = GameCenter()
     @State private var ads = RewardedAds()
     @State private var dailyReward = DailyReward()
+    @State private var dailyPuzzle = DailyPuzzle()
+    @State private var progress = PlayerProgress(reporter: GameCenterReporter())
 
     init() {
         let wallet = Wallet()
@@ -27,7 +29,13 @@ struct VowellessApp: App {
                 .environment(gameCenter)
                 .environment(ads)
                 .environment(dailyReward)
+                .environment(dailyPuzzle)
+                .environment(progress)
+                .onChange(of: gameCenter.isSignedIn) { _, signedIn in
+                    if signedIn { progress.resync() }
+                }
                 .task { await store.start() }
+                .task { await dailyPuzzle.feed.refresh() }
                 .task { gameCenter.authenticate() }
                 .task {
                     if musicSource.usesLibrary { await library.load() }
