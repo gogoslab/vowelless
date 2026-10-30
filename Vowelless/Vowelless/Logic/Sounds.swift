@@ -25,7 +25,11 @@ final class Sounds {
         UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
     }
 
-    static func play(_ effect: Effect) { shared.play(effect) }
+    /// Plays the sound and its matching vibration (see `Haptics`); each has its own switch in Settings.
+    static func play(_ effect: Effect) {
+        shared.play(effect)
+        Haptics.play(effect)
+    }
 
     func play(_ effect: Effect) {
         guard isEnabled else { return }

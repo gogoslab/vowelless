@@ -16,6 +16,8 @@ struct HomeView: View {
     @State private var showShop = false
     @State private var bounce = false
     @State private var showSettings = false
+    @State private var showTutorial = false
+    @AppStorage(TutorialView.seenKey) private var tutorialSeen = false
     @AppStorage(Difficulty.storageKey) private var difficulty: Difficulty = .easy
     /// Hides the title while SplashView's tiles are flying into its place.
     var titleHidden = false
@@ -40,13 +42,26 @@ struct HomeView: View {
         .onChange(of: titleHidden, initial: true) { _, hidden in
             if !hidden {
                 bounce = true
-                if dailyReward.isAvailable { showDailyReward = true }
+                if !tutorialSeen {
+                    showTutorial = true
+                } else if dailyReward.isAvailable {
+                    showDailyReward = true
+                }
             }
         }
-        .task {
-            // Wait for the splash, so the consent form (if any) doesn't cover the animation.
+        .task(id: tutorialSeen) {
+            // Wait for the splash and the first-launch tutorial, so the consent form (if any) doesn't cover them.
+            guard tutorialSeen else { return }
             try? await Task.sleep(for: .seconds(2))
             await ads.start()
+        }
+        .fullScreenCover(isPresented: $showTutorial, onDismiss: {
+            tutorialSeen = true
+            if dailyReward.isAvailable { showDailyReward = true }
+        }) {
+            TutorialView { showTutorial = false }
+                .fontDesign(.rounded)
+                .environment(dailyPuzzle)
         }
         .sheet(isPresented: $showDailyReward) {
             DailyRewardView()
@@ -79,6 +94,7 @@ struct HomeView: View {
                 .fontDesign(.rounded)
                 .environment(library)
                 .environment(ads)
+                .environment(dailyPuzzle)
                 .presentationDragIndicator(.visible)
         }
     }

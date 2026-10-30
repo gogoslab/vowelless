@@ -60,7 +60,6 @@ struct DailyRewardView: View {
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PlayfulBackground())
-        .sensoryFeedback(.success, trigger: claimed)
         .interactiveDismissDisabled(claimed == nil)
     }
 

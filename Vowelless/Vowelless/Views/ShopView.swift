@@ -58,7 +58,6 @@ struct ShopView: View {
         .task {
             if store.loadState != .loaded { await store.loadProducts() }
         }
-        .sensoryFeedback(.success, trigger: wallet.coins)
     }
 
     private var header: some View {

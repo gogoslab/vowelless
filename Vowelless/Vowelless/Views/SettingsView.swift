@@ -6,6 +6,12 @@ struct SettingsView: View {
     @Environment(MusicLibrary.self) private var library
     @Environment(RewardedAds.self) private var ads
     @AppStorage(Sounds.enabledKey) private var soundsEnabled = true
+    @AppStorage(Haptics.enabledKey) private var hapticsEnabled = true
+    @AppStorage(DailyReminder.enabledKey) private var reminderEnabled = false
+    @AppStorage(DailyReminder.minutesKey) private var reminderMinutes = DailyReminder.defaultMinutes
+    @State private var notificationsDenied = false
+    @State private var showTutorial = false
+    @Environment(DailyPuzzle.self) private var daily
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -38,17 +44,37 @@ struct SettingsView: View {
 
                 musicSourceCard
 
-                Toggle(isOn: $soundsEnabled) {
-                    Label("Sound effects", systemImage: soundsEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                        .font(.system(.title3, design: .rounded, weight: .black))
-                        .foregroundStyle(Theme.ink)
+                Text("Sound & reminders")
+                    .font(.system(.title2, design: .rounded, weight: .heavy))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.top, 12)
+
+                VStack(spacing: 16) {
+                    Toggle(isOn: $soundsEnabled) {
+                        Label("Sound effects", systemImage: soundsEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    }
+                    Divider()
+                    Toggle(isOn: $hapticsEnabled) {
+                        Label("Vibration", systemImage: "iphone.radiowaves.left.and.right")
+                    }
                 }
+                .font(.system(.title3, design: .rounded, weight: .black))
+                .foregroundStyle(Theme.ink)
                 .tint(Theme.correct)
                 .padding(20)
                 .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(.white))
                 .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color.white.darker(0.3)).offset(y: 5))
-                .padding(.top, 12)
                 .onChange(of: soundsEnabled) { _, on in if on { Sounds.play(.pop) } }
+                .onChange(of: hapticsEnabled) { _, on in if on { Haptics.play(.pop) } }
+
+                reminderCard
+
+                Button { showTutorial = true } label: {
+                    Label("How to play", systemImage: "questionmark.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(ChunkyButtonStyle(color: .white, foreground: Theme.ink, depth: 5, cornerRadius: 20))
+                .padding(.top, 12)
 
                 if ads.privacyOptionsRequired {
                     Button {
@@ -67,6 +93,68 @@ struct SettingsView: View {
         .background(PlayfulBackground())
         .sensoryFeedback(.selection, trigger: difficulty)
         .sensoryFeedback(.selection, trigger: musicSource)
+        .fullScreenCover(isPresented: $showTutorial) {
+            TutorialView { showTutorial = false }
+                .fontDesign(.rounded)
+                .environment(daily)
+        }
+        .task { notificationsDenied = await DailyReminder.isDenied }
+    }
+
+    // MARK: - Daily reminder
+
+    private var reminderTime: Binding<Date> {
+        Binding {
+            Calendar.current.date(byAdding: .minute, value: reminderMinutes, to: Calendar.current.startOfDay(for: .now)) ?? .now
+        } set: { date in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            reminderMinutes = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        }
+    }
+
+    private var reminderCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Toggle(isOn: $reminderEnabled.animation(.spring(bounce: 0.3))) {
+                Label("Daily reminder", systemImage: reminderEnabled ? "bell.badge.fill" : "bell.slash.fill")
+                    .font(.system(.title3, design: .rounded, weight: .black))
+            }
+            .tint(Theme.correct)
+
+            if reminderEnabled {
+                if notificationsDenied {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Notifications are turned off for Vowelless.", systemImage: "lock.fill")
+                            .foregroundStyle(Theme.wrong)
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
+                        }
+                        .buttonStyle(ChunkyButtonStyle(color: Theme.ink, depth: 4, cornerRadius: 14))
+                    }
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                } else {
+                    DatePicker(selection: reminderTime, displayedComponents: .hourAndMinute) {
+                        Text("A nudge when today's puzzle is waiting, skipped once you've played.")
+                            .font(.system(.subheadline, design: .rounded, weight: .bold))
+                            .opacity(0.75)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
+        .foregroundStyle(Theme.ink)
+        .padding(20)
+        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(.white))
+        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color.white.darker(0.3)).offset(y: 5))
+        .padding(.top, 12)
+        .onChange(of: reminderEnabled) { _, on in
+            Task {
+                if on, !(await DailyReminder.requestPermission()) { notificationsDenied = true }
+                await DailyReminder.reschedule(for: daily)
+            }
+        }
+        .onChange(of: reminderMinutes) {
+            Task { await DailyReminder.reschedule(for: daily) }
+        }
     }
 
     // MARK: - Music library
@@ -194,4 +282,5 @@ struct SettingsView: View {
         .fontDesign(.rounded)
         .environment(MusicLibrary())
         .environment(RewardedAds())
+        .environment(DailyPuzzle())
 }

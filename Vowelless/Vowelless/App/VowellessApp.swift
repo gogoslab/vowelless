@@ -17,6 +17,7 @@ struct VowellessApp: App {
         _store = State(initialValue: Store(wallet: wallet))
     }
     @AppStorage(MusicSource.storageKey) private var musicSource: MusicSource = .builtIn
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -33,6 +34,13 @@ struct VowellessApp: App {
                 .environment(progress)
                 .onChange(of: gameCenter.isSignedIn) { _, signedIn in
                     if signedIn { progress.resync() }
+                }
+                // Opening the app or playing today's puzzle changes which reminders are due.
+                .onChange(of: scenePhase, initial: true) { _, phase in
+                    if phase == .active { Task { await DailyReminder.reschedule(for: dailyPuzzle) } }
+                }
+                .onChange(of: dailyPuzzle.playedNumber) {
+                    Task { await DailyReminder.reschedule(for: dailyPuzzle) }
                 }
                 .task { await store.start() }
                 .task { await dailyPuzzle.feed.refresh() }

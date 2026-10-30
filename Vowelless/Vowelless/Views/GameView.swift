@@ -32,9 +32,6 @@ struct GameView: View {
         }
         .background(PlayfulBackground())
         .toolbar(.hidden, for: .navigationBar)
-        .sensoryFeedback(.error, trigger: session.wrongAttempts)
-        .sensoryFeedback(.success, trigger: session.score)
-        .sensoryFeedback(.impact(weight: .light), trigger: session.revealedVowels)
         .sensoryFeedback(.start, trigger: speech.isListening)
         .onChange(of: session.wrongAttempts) { Sounds.play(.wrong) }
         .onChange(of: session.correctCount) { Sounds.play(.correct) }

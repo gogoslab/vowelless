@@ -34,8 +34,6 @@ struct RaceView: View {
             }
         }
         .background(PlayfulBackground())
-        .sensoryFeedback(.error, trigger: wrongAttempts)
-        .sensoryFeedback(.success, trigger: engine.scores[engine.localPlayerID])
         .onChange(of: engine.currentIndex) {
             speech.cancel()
             guess = ""
